@@ -15,13 +15,15 @@ export const AuthProvider = ({ children }) => {
     checkAppState();
   }, []);
 
+  const getAuthToken = () => localStorage.getItem('inkit_token') || localStorage.getItem('token');
+
   const checkAppState = async () => {
     try {
       setIsLoadingAuth(true);
       setAuthError(null);
 
       // Check if we have a token stored
-      const token = localStorage.getItem('inkit_token');
+      const token = getAuthToken();
 
       if (token) {
         await checkUserAuth();
@@ -51,13 +53,18 @@ export const AuthProvider = ({ children }) => {
       setIsLoadingAuth(false);
       setIsAuthenticated(false);
 
-      // Clear invalid token
-      localStorage.removeItem('inkit_token');
-
       if (error.status === 401 || error.status === 403) {
+        // Clear token only when backend confirms auth is invalid.
+        localStorage.removeItem('inkit_token');
+        localStorage.removeItem('token');
         setAuthError({
           type: 'auth_required',
           message: 'Authentication required'
+        });
+      } else {
+        setAuthError({
+          type: 'unknown',
+          message: error.message || 'Unable to verify authentication right now'
         });
       }
     }

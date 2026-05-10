@@ -25,6 +25,20 @@ import ClientForm from "../components/clients/ClientForm";
 import ClientDetails from "../components/clients/ClientDetails";
 
 export default function Clients() {
+  const mapClientFromApi = (client) => ({
+    ...client,
+    full_name: client.full_name ?? client.name ?? '',
+    phone: client.phone ?? client.phoneNumber ?? '',
+    address: client.address ?? client.streetAddress ?? ''
+  });
+
+  const mapClientToApi = (clientData) => ({
+    name: clientData.full_name,
+    email: clientData.email,
+    phoneNumber: clientData.phone,
+    streetAddress: clientData.address
+  });
+
   const [showForm, setShowForm] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
   const [selectedClient, setSelectedClient] = useState(null);
@@ -41,9 +55,11 @@ export default function Clients() {
     queryKey: ['clients'],
     queryFn: async () => {
       try {
-        return await base44.entities.Client.list('-created_date', 200);
+        const rawClients = await base44.entities.Client.list('-created_date', 200);
+        return Array.isArray(rawClients) ? rawClients.map(mapClientFromApi) : [];
       } catch {
-        return base44.entities.User.filter({ account_type: 'client' });
+        const users = await base44.entities.User.filter({ account_type: 'client' });
+        return Array.isArray(users) ? users.map(mapClientFromApi) : [];
       }
     },
     staleTime: 60 * 1000,
@@ -69,13 +85,13 @@ export default function Clients() {
     try {
       if (editingClient) {
         if (base44.entities.Client?.update) {
-          await base44.entities.Client.update(editingClient.id, clientData);
+          await base44.entities.Client.update(editingClient.id, mapClientToApi(clientData));
         } else {
           await base44.entities.User.update(editingClient.id, clientData);
         }
       } else {
         try {
-          await base44.entities.Client.create(clientData);
+          await base44.entities.Client.create(mapClientToApi(clientData));
         } catch {
           await base44.entities.User.create({
             ...clientData,

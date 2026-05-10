@@ -8,9 +8,18 @@
 const API_URL ='http://localhost:8081';
 
 // Token management
-const getToken = () => localStorage.getItem('inkit_token');
-const setToken = (token) => localStorage.setItem('inkit_token', token);
-const clearToken = () => localStorage.removeItem('inkit_token');
+const TOKEN_KEY = 'inkit_token';
+const LEGACY_TOKEN_KEY = 'token';
+
+const getToken = () => localStorage.getItem(TOKEN_KEY) || localStorage.getItem(LEGACY_TOKEN_KEY);
+const setToken = (token) => {
+    localStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem(LEGACY_TOKEN_KEY, token);
+};
+const clearToken = () => {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(LEGACY_TOKEN_KEY);
+};
 
 const normalizeUser = (user) => {
     if (!user || typeof user !== 'object') {
@@ -365,7 +374,7 @@ export const createApiClient = (config = {}) => {
             },
             Client: createEntityApi('clients', {
                 basePath: '/api/clients',
-                createPath: '/api/client'
+                createPath: '/api/clients'
             })
         },
 

@@ -16,10 +16,10 @@ export default function CaseForm({ case_item, onSave, onCancel, onDelete }) {
         client_name: '',
         client_contact: '',
         client_id: '',
-        court: 'high_court',
-        case_type: 'civil',
-        status: 'active',
-        priority: 'medium',
+        court: 'High_Court',
+        case_type: 'Civil',
+        status: 'ACTIVE',
+        priority: 'MEDIUM',
         case_description: '',
         opposing_counsel: '',
         case_value: '',
@@ -42,8 +42,16 @@ export default function CaseForm({ case_item, onSave, onCancel, onDelete }) {
             setCurrentUser(userData);
 
             // Load clients
-            const clientUsers = await base44.entities.User.filter({ account_type: 'client' });
-            setClients(clientUsers);
+            const clientRows = await base44.entities.Client.list('-created_date', 200);
+            const normalizedClients = Array.isArray(clientRows)
+                ? clientRows.map((c) => ({
+                    ...c,
+                    full_name: c.full_name ?? c.name ?? '',
+                    phone: c.phone ?? c.phoneNumber ?? '',
+                    address: c.address ?? c.streetAddress ?? ''
+                }))
+                : [];
+            setClients(normalizedClients);
 
             // Set form data
             if (case_item) {
@@ -53,10 +61,10 @@ export default function CaseForm({ case_item, onSave, onCancel, onDelete }) {
                     client_name: case_item.client_name || '',
                     client_contact: case_item.client_contact || '',
                     client_id: case_item.client_id || '',
-                    court: case_item.court || 'high_court',
-                    case_type: case_item.case_type || 'civil',
-                    status: case_item.status || 'active',
-                    priority: case_item.priority || 'medium',
+                    court: case_item.court || 'High_Court',
+                    case_type: case_item.case_type || 'Civil',
+                    status: case_item.status || 'ACTIVE',
+                    priority: case_item.priority || 'MEDIUM',
                     case_description: case_item.case_description || '',
                     opposing_counsel: case_item.opposing_counsel || '',
                     case_value: case_item.case_value || '',
@@ -167,12 +175,12 @@ export default function CaseForm({ case_item, onSave, onCancel, onDelete }) {
                             <Select value={formData.court} onValueChange={(value) => handleChange('court', value)}>
                                 <SelectTrigger><SelectValue /></SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="supreme_court">Supreme Court</SelectItem>
-                                    <SelectItem value="high_court">High Court</SelectItem>
-                                    <SelectItem value="district_court">District Court</SelectItem>
-                                    <SelectItem value="sessions_court">Sessions Court</SelectItem>
-                                    <SelectItem value="magistrate_court">Magistrate Court</SelectItem>
-                                    <SelectItem value="tribunal">Tribunal</SelectItem>
+                                    <SelectItem value="Supreme_Court">Supreme Court</SelectItem>
+                                    <SelectItem value="High_Court">High Court</SelectItem>
+                                    <SelectItem value="District_Court">District Court</SelectItem>
+                                    <SelectItem value="Session_Court">Sessions Court</SelectItem>
+                                    <SelectItem value="Megistrate_Court">Magistrate Court</SelectItem>
+                                    <SelectItem value="Tribunal">Tribunal</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -181,14 +189,14 @@ export default function CaseForm({ case_item, onSave, onCancel, onDelete }) {
                             <Select value={formData.case_type} onValueChange={(value) => handleChange('case_type', value)}>
                                 <SelectTrigger><SelectValue /></SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="civil">Civil</SelectItem>
-                                    <SelectItem value="criminal">Criminal</SelectItem>
-                                    <SelectItem value="corporate">Corporate</SelectItem>
-                                    <SelectItem value="family">Family</SelectItem>
-                                    <SelectItem value="labor">Labor</SelectItem>
-                                    <SelectItem value="tax">Tax</SelectItem>
-                                    <SelectItem value="constitutional">Constitutional</SelectItem>
-                                    <SelectItem value="writ">Writ</SelectItem>
+                                    <SelectItem value="Civil">Civil</SelectItem>
+                                    <SelectItem value="Criminal">Criminal</SelectItem>
+                                    <SelectItem value="Corporate">Corporate</SelectItem>
+                                    <SelectItem value="Family">Family</SelectItem>
+                                    <SelectItem value="Labour">Labor</SelectItem>
+                                    <SelectItem value="Tax">Tax</SelectItem>
+                                    <SelectItem value="Constitutional">Constitutional</SelectItem>
+                                    <SelectItem value="Writ">Writ</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -199,11 +207,11 @@ export default function CaseForm({ case_item, onSave, onCancel, onDelete }) {
                             <Select value={formData.status} onValueChange={(value) => handleChange('status', value)}>
                                 <SelectTrigger><SelectValue /></SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="active">Active</SelectItem>
-                                    <SelectItem value="pending">Pending</SelectItem>
-                                    <SelectItem value="closed">Closed</SelectItem>
-                                    <SelectItem value="on_hold">On Hold</SelectItem>
-                                    <SelectItem value="appeal">Appeal</SelectItem>
+                                    <SelectItem value="ACTIVE">Active</SelectItem>
+                                    <SelectItem value="PENDING">Pending</SelectItem>
+                                    <SelectItem value="CLOSED">Closed</SelectItem>
+                                    <SelectItem value="ON_HOLD">On Hold</SelectItem>
+                                    <SelectItem value="APPEAL">Appeal</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -212,9 +220,9 @@ export default function CaseForm({ case_item, onSave, onCancel, onDelete }) {
                              <Select value={formData.priority} onValueChange={(value) => handleChange('priority', value)}>
                                 <SelectTrigger><SelectValue /></SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="high">High</SelectItem>
-                                    <SelectItem value="medium">Medium</SelectItem>
-                                    <SelectItem value="low">Low</SelectItem>
+                                    <SelectItem value="HIGH">High</SelectItem>
+                                    <SelectItem value="MEDIUM">Medium</SelectItem>
+                                    <SelectItem value="LOW">Low</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>

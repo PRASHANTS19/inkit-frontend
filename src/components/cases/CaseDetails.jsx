@@ -104,17 +104,17 @@ export default function CaseDetails({ case_item, onClose, onEdit, onDelete }) {
   );
 
   const statusColors = {
-    active: "bg-green-100 text-green-800",
-    pending: "bg-yellow-100 text-yellow-800",
-    closed: "bg-gray-100 text-gray-800",
-    on_hold: "bg-red-100 text-red-800",
-    appeal: "bg-blue-100 text-blue-800"
+    ACTIVE: "bg-green-100 text-green-800",
+    PENDING: "bg-yellow-100 text-yellow-800",
+    CLOSED: "bg-gray-100 text-gray-800",
+    ON_HOLD: "bg-red-100 text-red-800",
+    APPEAL: "bg-blue-100 text-blue-800"
   };
 
   const priorityColors = {
-    high: "bg-red-100 text-red-800",
-    medium: "bg-yellow-100 text-yellow-800",
-    low: "bg-blue-100 text-blue-800"
+    HIGH: "bg-red-100 text-red-800",
+    MEDIUM: "bg-yellow-100 text-yellow-800",
+    LOW: "bg-blue-100 text-blue-800"
   };
 
   const upcomingHearing = hearings.filter(h =>

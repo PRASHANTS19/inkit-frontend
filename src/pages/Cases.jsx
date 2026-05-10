@@ -314,10 +314,10 @@ export default function Cases() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="closed">Closed</SelectItem>
-                      <SelectItem value="on_hold">On Hold</SelectItem>
+                      <SelectItem value="ACTIVE">Active</SelectItem>
+                      <SelectItem value="PENDING">Pending</SelectItem>
+                      <SelectItem value="CLOSED">Closed</SelectItem>
+                      <SelectItem value="ON_HOLD">On Hold</SelectItem>
                     </SelectContent>
                   </Select>
 
@@ -327,10 +327,10 @@ export default function Cases() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Courts</SelectItem>
-                      <SelectItem value="supreme_court">Supreme Court</SelectItem>
-                      <SelectItem value="high_court">High Court</SelectItem>
-                      <SelectItem value="district_court">District Court</SelectItem>
-                      <SelectItem value="sessions_court">Sessions Court</SelectItem>
+                      <SelectItem value="Supreme_Court">Supreme Court</SelectItem>
+                      <SelectItem value="High_Court">High Court</SelectItem>
+                      <SelectItem value="District_Court">District Court</SelectItem>
+                      <SelectItem value="Session_Court">Sessions Court</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

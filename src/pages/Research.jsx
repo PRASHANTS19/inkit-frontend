@@ -7,6 +7,8 @@ import MessageBubble from '../components/research/MessageBubble';
 import ChatInput from '../components/research/ChatInput';
 import { Case } from '@/entities/all';
 
+const getAuthToken = () => localStorage.getItem('inkit_token') || localStorage.getItem('token');
+
 export default function Research() {
   // Sidebar state
   const [sidebarTab, setSidebarTab] = useState('cases');
@@ -53,7 +55,7 @@ export default function Research() {
     try {
       const response = await fetch(`/api/research-chat/${caseId}`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${getAuthToken()}`
         }
       });
       const data = await response.json();
@@ -68,7 +70,7 @@ export default function Research() {
     try {
       const response = await fetch('/api/research-chat/research/history', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${getAuthToken()}`
         }
       });
       const data = await response.json();
@@ -118,7 +120,7 @@ export default function Research() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${getAuthToken()}`
         },
         body: JSON.stringify({
           mode,
@@ -168,7 +170,7 @@ export default function Research() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${getAuthToken()}`
         },
         body: JSON.stringify({
           case_id: mode === 'case' ? selectedCaseId : null,
