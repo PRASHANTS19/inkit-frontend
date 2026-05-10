@@ -24,6 +24,16 @@ import AssociatesList from "../components/dashboard/AssociatesList";
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
+  const safeQuery = async (promiseFactory, fallback = []) => {
+    try {
+      return await promiseFactory();
+    } catch (e) {
+      if (e?.status === 403 || e?.status === 404) {
+        return fallback;
+      }
+      throw e;
+    }
+  };
 
   // Load user data first
   const { data: userData, isLoading: isLoadingUser } = useQuery({
@@ -54,9 +64,9 @@ export default function Dashboard() {
         }
 
         const [allCases, allTasks, allHearings] = await Promise.all([
-          base44.entities.Case.list('-created_date', 50),
-          base44.entities.Task.list('-created_date', 20),
-          base44.entities.Hearing.list('hearing_date', 20),
+          safeQuery(() => base44.entities.Case.list('-created_date', 50), []),
+          safeQuery(() => base44.entities.Task.list('-created_date', 20), []),
+          safeQuery(() => base44.entities.Hearing.list('hearing_date', 20), []),
         ]);
 
         return {
@@ -69,19 +79,19 @@ export default function Dashboard() {
       } else {
         // Admins/Independent: Load recent data with limits
         const [cases, tasks, hearings, invoices, associates] = await Promise.all([
-          base44.entities.Case.list('-created_date', 10), // Only 10 most recent
-          base44.entities.Task.filter({ status: 'pending' }, '-created_date', 10), // Only pending
-          base44.entities.Hearing.list('hearing_date', 10), // Next 10 hearings
+          safeQuery(() => base44.entities.Case.list('-created_date', 10), []), // Only 10 most recent
+          safeQuery(() => base44.entities.Task.filter({ status: 'pending' }, '-created_date', 10), []), // Only pending
+          safeQuery(() => base44.entities.Hearing.list('hearing_date', 10), []), // Next 10 hearings
           user.account_type === 'law_firm_admin' || user.account_type === 'independent_advocate'
-            ? base44.entities.Invoice.filter({
+            ? safeQuery(() => base44.entities.Invoice.filter({
               status: { $in: ['sent', 'overdue'] }
-            }, '-created_date', 20)
+            }, '-created_date', 20), [])
             : Promise.resolve([]),
           user.account_type === 'law_firm_admin'
-            ? base44.entities.User.filter({
+            ? safeQuery(() => base44.entities.User.filter({
               firm_admin_id: user.id,
               account_type: 'associate'
-            })
+            }), [])
             : Promise.resolve([])
         ]);
 

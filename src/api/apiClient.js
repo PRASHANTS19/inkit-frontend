@@ -12,6 +12,21 @@ const getToken = () => localStorage.getItem('inkit_token');
 const setToken = (token) => localStorage.setItem('inkit_token', token);
 const clearToken = () => localStorage.removeItem('inkit_token');
 
+const normalizeUser = (user) => {
+    if (!user || typeof user !== 'object') {
+        return user;
+    }
+    return {
+        ...user,
+        full_name: user.full_name ?? user.fullName ?? user.name ?? null,
+        account_type: user.account_type ?? user.accountType ?? null,
+        firm_name: user.firm_name ?? user.firmName ?? null,
+        bar_number: user.bar_number ?? user.barNumber ?? null,
+        is_active: user.is_active ?? user.isActive ?? null,
+        created_date: user.created_date ?? user.createdDate ?? null
+    };
+};
+
 /**
  * Make an authenticated API request
  */
@@ -132,9 +147,11 @@ const authApi = {
      */
     me: async () => {
         try {
-            return await apiRequest('/api/users/me');
+            const user = await apiRequest('/api/users/me');
+            return normalizeUser(user);
         } catch {
-            return apiRequest('/api/auth/me');
+            const user = await apiRequest('/api/auth/me');
+            return normalizeUser(user);
         }
     },
 
