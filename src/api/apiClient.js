@@ -5,7 +5,7 @@
  * our independent backend API instead.
  */
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_URL ='http://localhost:8081';
 
 // Token management
 const getToken = () => localStorage.getItem('inkit_token');
@@ -37,15 +37,21 @@ const apiRequest = async (endpoint, options = {}) => {
         throw err;
     }
 
-    return response.json();
+    if (response.status === 204) {
+        return null;
+    }
+
+    return response.json().catch(() => null);
 };
 
 /**
  * Create an entity API with standard CRUD operations
  * Matches the Base44 SDK entity interface
  */
-const createEntityApi = (entityName) => {
-    const basePath = `/api/${entityName.toLowerCase()}`;
+const createEntityApi = (entityName, config = {}) => {
+    const basePath = config.basePath || `/api/${entityName.toLowerCase()}`;
+    const createPath = config.createPath || basePath;
+    const filterPath = config.filterPath || `${basePath}/filter`;
 
     return {
         /**
@@ -54,7 +60,7 @@ const createEntityApi = (entityName) => {
          * @param {number} limit - Maximum number of records
          */
         list: async (sortBy = '-created_date', limit = 50) => {
-            return apiRequest(`${basePath}?sortBy=${sortBy}&limit=${limit}`);
+            return apiRequest(`${basePath}?limit=${limit}`);
         },
 
         /**
@@ -64,10 +70,18 @@ const createEntityApi = (entityName) => {
          * @param {number} limit - Maximum number of records
          */
         filter: async (filter = {}, sortBy = '-created_date', limit = 50) => {
-            return apiRequest(`${basePath}/filter`, {
-                method: 'POST',
-                body: JSON.stringify({ filter, sortBy, limit })
-            });
+            try {
+                return await apiRequest(filterPath, {
+                    method: 'POST',
+                    body: JSON.stringify({ filter, sortBy, limit })
+                });
+            } catch (error) {
+                // Fallback for backends that do not expose /filter endpoints.
+                const rows = await apiRequest(`${basePath}?limit=${limit}`);
+                return Array.isArray(rows)
+                    ? rows.filter((row) => Object.entries(filter).every(([k, v]) => row?.[k] === v))
+                    : [];
+            }
         },
 
         /**
@@ -81,7 +95,7 @@ const createEntityApi = (entityName) => {
          * Create a new entity
          */
         create: async (data) => {
-            return apiRequest(basePath, {
+            return apiRequest(createPath, {
                 method: 'POST',
                 body: JSON.stringify(data)
             });
@@ -117,14 +131,19 @@ const authApi = {
      * Get current authenticated user
      */
     me: async () => {
-        return apiRequest('/api/auth/me');
+        try {
+            return await apiRequest('/api/users/me');
+        } catch {
+            return apiRequest('/api/auth/me');
+        }
     },
 
     /**
      * Login with email and password
      */
     login: async (email, password) => {
-        const result = await apiRequest('/api/auth/login', {
+        const loginEndpoint = '/auth/login';
+        const result = await apiRequest(loginEndpoint, {
             method: 'POST',
             body: JSON.stringify({ email, password })
         });
@@ -138,14 +157,19 @@ const authApi = {
      * Register a new user
      */
     register: async (userData) => {
-        const result = await apiRequest('/api/auth/register', {
+        const registerEndpoint = '/auth/register';
+        const result = await apiRequest(registerEndpoint, {
             method: 'POST',
             body: JSON.stringify(userData)
         });
-        if (result.token) {
+        // Java backend returns a plain success message from /auth/register.
+        // Auto-login after successful registration so callers still receive a user.
+        if (result && result.token) {
             setToken(result.token);
+            return result.user ?? authApi.me();
         }
-        return result.user;
+
+        return authApi.login(userData.email, userData.password);
     },
 
     /**
@@ -306,13 +330,26 @@ export const createApiClient = (config = {}) => {
             ResearchQuery: createEntityApi('research'),
             Snippet: createEntityApi('snippets'),
             User: {
-                ...createEntityApi('users'),
+                ...createEntityApi('users', { basePath: '/api/users' }),
                 // User filter is commonly used
-                filter: async (filter, sortBy, limit) => apiRequest('/api/users/filter', {
-                    method: 'POST',
-                    body: JSON.stringify({ filter, sortBy, limit })
-                })
-            }
+                filter: async (filter, sortBy = '-created_date', limit = 50) => {
+                    try {
+                        return await apiRequest('/api/users/filter', {
+                            method: 'POST',
+                            body: JSON.stringify({ filter, sortBy, limit })
+                        });
+                    } catch {
+                        const users = await apiRequest(`/api/users?limit=${limit}`);
+                        return Array.isArray(users)
+                            ? users.filter((row) => Object.entries(filter || {}).every(([k, v]) => row?.[k] === v))
+                            : [];
+                    }
+                }
+            },
+            Client: createEntityApi('clients', {
+                basePath: '/api/clients',
+                createPath: '/api/client'
+            })
         },
 
         integrations: integrationsApi

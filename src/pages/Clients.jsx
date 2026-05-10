@@ -40,8 +40,11 @@ export default function Clients() {
   const { data: clients = [], isLoading } = useQuery({
     queryKey: ['clients'],
     queryFn: async () => {
-      const allClients = await base44.entities.User.filter({ account_type: 'client' });
-      return allClients;
+      try {
+        return await base44.entities.Client.list('-created_date', 200);
+      } catch {
+        return base44.entities.User.filter({ account_type: 'client' });
+      }
     },
     staleTime: 60 * 1000,
   });
@@ -65,12 +68,20 @@ export default function Clients() {
   const handleSaveClient = async (clientData) => {
     try {
       if (editingClient) {
-        await base44.entities.User.update(editingClient.id, clientData);
+        if (base44.entities.Client?.update) {
+          await base44.entities.Client.update(editingClient.id, clientData);
+        } else {
+          await base44.entities.User.update(editingClient.id, clientData);
+        }
       } else {
-        await base44.entities.User.create({
-          ...clientData,
-          account_type: 'client'
-        });
+        try {
+          await base44.entities.Client.create(clientData);
+        } catch {
+          await base44.entities.User.create({
+            ...clientData,
+            account_type: 'client'
+          });
+        }
       }
       queryClient.invalidateQueries({ queryKey: ['clients'] });
       setShowForm(false);
@@ -86,7 +97,11 @@ export default function Clients() {
       return;
     }
     try {
-      await base44.entities.User.delete(clientId);
+      if (base44.entities.Client?.delete) {
+        await base44.entities.Client.delete(clientId);
+      } else {
+        await base44.entities.User.delete(clientId);
+      }
       queryClient.invalidateQueries({ queryKey: ['clients'] });
       setSelectedClient(null);
     } catch (error) {
