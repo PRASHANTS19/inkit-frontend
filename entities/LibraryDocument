@@ -1,0 +1,68 @@
+{
+  "name": "LibraryDocument",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Title of the library document"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "URL of the uploaded file"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "bare_act",
+        "draft_template",
+        "research_paper",
+        "case_law",
+        "other"
+      ],
+      "description": "Category of the document"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Descriptive tags for searching"
+    },
+    "summary": {
+      "type": "string",
+      "description": "Optional AI-generated summary of the document"
+    },
+    "firm_id": {
+      "type": "string",
+      "description": "ID of the firm this document belongs to, for sharing within a firm."
+    }
+  },
+  "required": [
+    "title",
+    "file_url",
+    "category"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "firm_admin_id": "{{this.firm_id}}"
+          }
+        },
+        {
+          "user_condition": {
+            "account_type": "law_firm_admin",
+            "id": "{{this.firm_id}}"
+          }
+        }
+      ]
+    },
+    "write": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "name": "Task",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Task title"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed task description"
+    },
+    "case_id": {
+      "type": "string",
+      "description": "Associated case ID"
+    },
+    "assigned_to": {
+      "type": "string",
+      "description": "User ID of person assigned to task"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Task due date"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "urgent",
+        "high",
+        "medium",
+        "low"
+      ],
+      "default": "medium",
+      "description": "Task priority level"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "in_progress",
+        "completed",
+        "cancelled"
+      ],
+      "default": "pending",
+      "description": "Current task status"
+    },
+    "task_type": {
+      "type": "string",
+      "enum": [
+        "research",
+        "filing",
+        "client_meeting",
+        "court_appearance",
+        "document_review",
+        "evidence_collection",
+        "other"
+      ],
+      "description": "Type of task"
+    },
+    "estimated_hours": {
+      "type": "number",
+      "description": "Estimated hours to complete task"
+    },
+    "actual_hours": {
+      "type": "number",
+      "description": "Actual hours spent on task"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes or comments"
+    },
+    "reminder_sent": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether reminder notification has been sent"
+    },
+    "firm_id": {
+      "type": "string",
+      "description": "ID of the associated firm"
+    }
+  },
+  "required": [
+    "title",
+    "case_id",
+    "assigned_to",
+    "due_date"
+  ]
+}

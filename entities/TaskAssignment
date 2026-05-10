@@ -1,0 +1,54 @@
+{
+  "name": "TaskAssignment",
+  "type": "object",
+  "properties": {
+    "task_id": {
+      "type": "string",
+      "description": "ID of the assigned task"
+    },
+    "assigned_to_user_id": {
+      "type": "string",
+      "description": "ID of the user assigned to the task"
+    },
+    "assigned_by_user_id": {
+      "type": "string",
+      "description": "ID of the admin who made the assignment"
+    },
+    "assignment_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the assignment was made"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Assignment notes from admin"
+    }
+  },
+  "required": [
+    "task_id",
+    "assigned_to_user_id",
+    "assigned_by_user_id"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "assigned_by_user_id": "{{user.id}}"
+        },
+        {
+          "assigned_to_user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "account_type": "law_firm_admin"
+          }
+        }
+      ]
+    },
+    "write": {
+      "user_condition": {
+        "account_type": "law_firm_admin"
+      }
+    }
+  }
+}

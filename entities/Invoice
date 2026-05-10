@@ -1,0 +1,165 @@
+{
+  "name": "Invoice",
+  "type": "object",
+  "properties": {
+    "invoice_number": {
+      "type": "string",
+      "description": "Unique invoice identifier"
+    },
+    "case_id": {
+      "type": "string",
+      "description": "Associated case ID"
+    },
+    "client_name": {
+      "type": "string",
+      "description": "Client name for billing"
+    },
+    "client_address": {
+      "type": "string",
+      "description": "Client billing address"
+    },
+    "invoice_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Invoice generation date"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Payment due date"
+    },
+    "line_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "hours": {
+            "type": "number"
+          },
+          "rate": {
+            "type": "number"
+          },
+          "amount": {
+            "type": "number"
+          }
+        }
+      },
+      "description": "Billable line items"
+    },
+    "subtotal": {
+      "type": "number",
+      "description": "Subtotal before taxes"
+    },
+    "tax_rate": {
+      "type": "number",
+      "description": "GST/tax rate percentage"
+    },
+    "tax_amount": {
+      "type": "number",
+      "description": "Total tax amount"
+    },
+    "total_amount": {
+      "type": "number",
+      "description": "Final total amount"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "sent",
+        "paid",
+        "overdue",
+        "cancelled"
+      ],
+      "default": "draft",
+      "description": "Invoice status"
+    },
+    "payment_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date when payment was received"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "cash",
+        "cheque",
+        "bank_transfer",
+        "upi",
+        "card"
+      ],
+      "description": "Payment method used"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional invoice notes"
+    },
+    "firm_details": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "address": {
+          "type": "string"
+        },
+        "gstin": {
+          "type": "string"
+        },
+        "pan": {
+          "type": "string"
+        }
+      },
+      "description": "Law firm details for invoice"
+    },
+    "firm_id": {
+      "type": "string",
+      "description": "ID of the associated firm"
+    }
+  },
+  "required": [
+    "invoice_number",
+    "case_id",
+    "client_name",
+    "total_amount"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "account_type": {
+              "$in": [
+                "independent_advocate",
+                "law_firm_admin"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "write": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "account_type": {
+              "$in": [
+                "independent_advocate",
+                "law_firm_admin"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

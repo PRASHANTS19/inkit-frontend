@@ -1,0 +1,59 @@
+{
+  "name": "CaseAssignment",
+  "type": "object",
+  "properties": {
+    "case_id": {
+      "type": "string",
+      "description": "ID of the assigned case"
+    },
+    "assigned_to_user_id": {
+      "type": "string",
+      "description": "ID of the user (associate) assigned to the case"
+    },
+    "assigned_by_user_id": {
+      "type": "string",
+      "description": "ID of the admin who made the assignment"
+    },
+    "assignment_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the assignment was made"
+    },
+    "role_in_case": {
+      "type": "string",
+      "enum": [
+        "lead_counsel",
+        "associate_counsel",
+        "research_assistant"
+      ],
+      "default": "associate_counsel",
+      "description": "Role of the assigned user in this case"
+    },
+    "permissions": {
+      "type": "object",
+      "properties": {
+        "can_edit_case": {
+          "type": "boolean",
+          "default": true
+        },
+        "can_add_documents": {
+          "type": "boolean",
+          "default": true
+        },
+        "can_schedule_hearings": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "notes": {
+      "type": "string",
+      "description": "Assignment notes from admin"
+    }
+  },
+  "required": [
+    "case_id",
+    "assigned_to_user_id",
+    "assigned_by_user_id"
+  ]
+}

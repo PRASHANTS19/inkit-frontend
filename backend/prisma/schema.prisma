@@ -1,0 +1,448 @@
+// Prisma Schema for Inkit Legal Management System (SQLite Version)
+// Optimized for zero-config local development
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// USER & AUTHENTICATION
+// ============================================================================
+
+model User {
+  id              String   @id @default(uuid())
+  email           String   @unique
+  password        String
+  full_name       String?
+  account_type    String   @default("independent_advocate")
+  firm_name       String?
+  firm_admin_id   String?
+  bar_number      String?
+  phone           String?
+  address         String?
+  specialization  String?  // Stored as JSON string or comma-separated
+  is_active       Boolean  @default(true)
+  
+  created_date    DateTime @default(now())
+  updated_date    DateTime @updatedAt
+  
+  // Relations
+  firmAdmin       User?    @relation("FirmAssociates", fields: [firm_admin_id], references: [id])
+  associates      User[]   @relation("FirmAssociates")
+  
+  casesCreated    Case[]   @relation("CaseCreator")
+  documentsUploaded Document[] @relation("DocumentUploader")
+  tasksAssigned   Task[]   @relation("TaskAssignee")
+  invitationsSent Invitation[] @relation("InvitationSender")
+  caseAssignmentsReceived CaseAssignment[] @relation("AssignmentReceiver")
+  caseAssignmentsMade     CaseAssignment[] @relation("AssignmentMaker")
+  taskAssignments TaskAssignment[] @relation("TaskAssignmentUser")
+  researchQueries ResearchQuery[]
+  snippets        Snippet[]
+  invoices        Invoice[] @relation("InvoiceCreator")
+  researchChats   ResearchChatHistory[]
+  researchNotes   ResearchNote[]
+  researchSources ResearchSource[]
+  
+  @@index([firm_admin_id])
+  @@index([email])
+}
+
+// ============================================================================
+// CASE MANAGEMENT
+// ============================================================================
+
+model Case {
+  id              String   @id @default(uuid())
+  case_number     String
+  case_title      String
+  client_name     String
+  client_contact  String?
+  client_id       String?
+  court           String?  // Changed from enum
+  case_type       String   // Changed from enum
+  status          String   @default("active") // Changed from enum
+  priority        String   @default("medium") // Changed from enum
+  next_hearing_date DateTime?
+  case_description String?
+  opposing_counsel String?
+  case_value      Float?
+  filing_date     DateTime?
+  tags            String?  // Changed from array
+  firm_id         String?
+  
+  created_by      String
+  created_date    DateTime @default(now())
+  updated_date    DateTime @updatedAt
+  
+  // Relations
+  creator         User     @relation("CaseCreator", fields: [created_by], references: [id])
+  documents       Document[]
+  hearings        Hearing[]
+  tasks           Task[]
+  invoices        Invoice[]
+  assignments     CaseAssignment[]
+  snippets        Snippet[]
+  researchQueries ResearchQuery[]
+  
+  @@index([created_by])
+  @@index([firm_id])
+  @@index([status])
+}
+
+// ============================================================================
+// DOCUMENTS
+// ============================================================================
+
+model Document {
+  id              String   @id @default(uuid())
+  title           String
+  case_id         String
+  document_type   String   // Changed from enum
+  file_url        String
+  file_size       Int?
+  file_type       String?
+  upload_date     DateTime @default(now())
+  uploaded_by     String
+  description     String?
+  is_confidential Boolean  @default(false)
+  tags            String?  // Changed from array
+  extracted_text  String?
+  ai_summary      String?
+  firm_id         String?
+  
+  created_date    DateTime @default(now())
+  updated_date    DateTime @updatedAt
+  
+  // Relations
+  case            Case     @relation(fields: [case_id], references: [id], onDelete: Cascade)
+  uploader        User     @relation("DocumentUploader", fields: [uploaded_by], references: [id])
+  snippets        Snippet[]
+  
+  @@index([case_id])
+  @@index([uploaded_by])
+}
+
+// ============================================================================
+// HEARINGS
+// ============================================================================
+
+model Hearing {
+  id                  String   @id @default(uuid())
+  case_id             String
+  hearing_date        DateTime
+  court_room          String?
+  judge_name          String?
+  hearing_type        String   // Changed from enum
+  status              String   @default("scheduled") // Changed from enum
+  outcome             String?
+  next_hearing_date   DateTime?
+  notes               String?
+  preparation_checklist String? // SQLite doesn't support Json well in Prisma, or use String
+  documents_required  String?  // Changed from array
+  reminder_sent       Boolean  @default(false)
+  firm_id             String?
+  
+  created_date        DateTime @default(now())
+  updated_date        DateTime @updatedAt
+  
+  // Relations
+  case                Case     @relation(fields: [case_id], references: [id], onDelete: Cascade)
+  
+  @@index([case_id])
+  @@index([hearing_date])
+}
+
+// ============================================================================
+// TASKS
+// ============================================================================
+
+model Task {
+  id              String   @id @default(uuid())
+  title           String
+  description     String?
+  case_id         String
+  assigned_to     String
+  due_date        DateTime
+  priority        String   @default("medium") // Changed from enum
+  status          String   @default("pending") // Changed from enum
+  task_type       String?  // Changed from enum
+  estimated_hours Float?
+  actual_hours    Float?
+  notes           String?
+  reminder_sent   Boolean  @default(false)
+  firm_id         String?
+  
+  created_date    DateTime @default(now())
+  updated_date    DateTime @updatedAt
+  
+  // Relations
+  case            Case     @relation(fields: [case_id], references: [id], onDelete: Cascade)
+  assignee        User     @relation("TaskAssignee", fields: [assigned_to], references: [id])
+  taskAssignments TaskAssignment[]
+  
+  @@index([case_id])
+  @@index([assigned_to])
+  @@index([status])
+}
+
+// ============================================================================
+// INVOICES
+// ============================================================================
+
+model Invoice {
+  id              String   @id @default(uuid())
+  invoice_number  String
+  case_id         String
+  client_name     String
+  client_address  String?
+  invoice_date    DateTime @default(now())
+  due_date        DateTime?
+  line_items      String?  // Changed from Json
+  subtotal        Float?
+  tax_rate        Float?
+  tax_amount      Float?
+  total_amount    Float
+  status          String   @default("draft") // Changed from enum
+  payment_date    DateTime?
+  payment_method  String?  // Changed from enum
+  notes           String?
+  firm_details    String?  // Changed from Json
+  firm_id         String?
+  
+  created_by      String
+  created_date    DateTime @default(now())
+  updated_date    DateTime @updatedAt
+  
+  // Relations
+  case            Case     @relation(fields: [case_id], references: [id], onDelete: Cascade)
+  creator         User     @relation("InvoiceCreator", fields: [created_by], references: [id])
+  
+  @@index([case_id])
+  @@index([created_by])
+  @@index([status])
+}
+
+// ============================================================================
+// INVITATIONS
+// ============================================================================
+
+model Invitation {
+  id              String   @id @default(uuid())
+  inviter_id      String
+  invitee_email   String
+  invitee_name    String?
+  role            String   @default("associate") // Changed from enum
+  status          String   @default("pending")   // Changed from enum
+  message         String?
+  expires_at      DateTime?
+  accepted_at     DateTime?
+  
+  created_date    DateTime @default(now())
+  updated_date    DateTime @updatedAt
+  
+  // Relations
+  inviter         User     @relation("InvitationSender", fields: [inviter_id], references: [id])
+  
+  @@index([inviter_id])
+  @@index([invitee_email])
+  @@index([status])
+}
+
+// ============================================================================
+// CASE ASSIGNMENTS
+// ============================================================================
+
+model CaseAssignment {
+  id                  String   @id @default(uuid())
+  case_id             String
+  assigned_to_user_id String
+  assigned_by_user_id String
+  assignment_date     DateTime @default(now())
+  role_in_case        String   @default("associate_counsel") // Changed from enum
+  permissions         String?  // Changed from Json
+  notes               String?
+  
+  created_date        DateTime @default(now())
+  updated_date        DateTime @updatedAt
+  
+  // Relations
+  case                Case     @relation(fields: [case_id], references: [id], onDelete: Cascade)
+  assignee            User     @relation("AssignmentReceiver", fields: [assigned_to_user_id], references: [id])
+  assigner            User     @relation("AssignmentMaker", fields: [assigned_by_user_id], references: [id])
+  
+  @@unique([case_id, assigned_to_user_id])
+  @@index([case_id])
+  @@index([assigned_to_user_id])
+}
+
+// ============================================================================
+// TASK ASSIGNMENTS
+// ============================================================================
+
+model TaskAssignment {
+  id              String   @id @default(uuid())
+  task_id         String
+  user_id         String
+  assigned_date   DateTime @default(now())
+  notes           String?
+  
+  created_date    DateTime @default(now())
+  updated_date    DateTime @updatedAt
+  
+  // Relations
+  task            Task     @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  user            User     @relation("TaskAssignmentUser", fields: [user_id], references: [id])
+  
+  @@unique([task_id, user_id])
+  @@index([task_id])
+  @@index([user_id])
+}
+
+// ============================================================================
+// LIBRARY DOCUMENTS
+// ============================================================================
+
+model LibraryDocument {
+  id              String   @id @default(uuid())
+  title           String
+  category        String?  // Changed from enum
+  description     String?
+  file_url        String
+  file_type       String?
+  file_size       Int?
+  tags            String?  // Changed from array
+  is_template     Boolean  @default(false)
+  firm_id         String?
+  
+  created_by      String?
+  created_date    DateTime @default(now())
+  updated_date    DateTime @updatedAt
+  
+  @@index([category])
+  @@index([firm_id])
+}
+
+// ============================================================================
+// RESEARCH QUERIES
+// ============================================================================
+
+model ResearchQuery {
+  id              String   @id @default(uuid())
+  query_text      String
+  case_id         String?
+  query_type      String   // Changed from enum
+  ai_response     String?
+  relevant_cases  String?  // Changed from Json
+  key_statutes    String?  // Changed from Json
+  confidence_score Float?
+  research_status String   @default("completed") // Changed from enum
+  tags            String?  // Changed from array
+  bookmark        Boolean  @default(false)
+  
+  created_by      String
+  created_date    DateTime @default(now())
+  updated_date    DateTime @updatedAt
+  
+  // Relations
+  case            Case?    @relation(fields: [case_id], references: [id], onDelete: SetNull)
+  creator         User     @relation(fields: [created_by], references: [id])
+  
+  @@index([case_id])
+  @@index([created_by])
+}
+
+// ============================================================================
+// SNIPPETS
+// ============================================================================
+
+model Snippet {
+  id              String   @id @default(uuid())
+  document_id     String
+  case_id         String
+  content         String
+  page_number     Int?
+  type            String   @default("snippet") // Changed from enum
+  position        String?  // Changed from Json
+  
+  created_by      String
+  created_date    DateTime @default(now())
+  updated_date    DateTime @updatedAt
+  
+  // Relations
+  document        Document @relation(fields: [document_id], references: [id], onDelete: Cascade)
+  case            Case     @relation(fields: [case_id], references: [id], onDelete: Cascade)
+  creator         User     @relation(fields: [created_by], references: [id])
+  
+  @@index([document_id])
+  @@index([case_id])
+  @@index([created_by])
+}
+
+// ============================================================================
+// AI RESEARCH CHAT SYSTEM
+// ============================================================================
+
+model ResearchChatHistory {
+  id              String   @id @default(uuid())
+  user_id         String
+  case_id         String?  // NULL for research mode
+  mode            String   // 'case' or 'research'
+  messages        String   // JSON array of {role, content, sources, confidence}
+  selected_docs   String?  // JSON array of document IDs (for case mode)
+  
+  created_date    DateTime @default(now())
+  updated_date    DateTime @updatedAt
+  
+  // Relations
+  user            User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_id])
+  @@index([case_id])
+  @@index([mode])
+}
+
+model ResearchNote {
+  id              String   @id @default(uuid())
+  user_id         String
+  case_id         String?  // NULL for research mode notes
+  question        String
+  answer          String
+  sources         String?  // JSON array of source citations
+  confidence      String?  // 'high', 'moderate', 'limited'
+  
+  created_date    DateTime @default(now())
+  updated_date    DateTime @updatedAt
+  
+  // Relations
+  user            User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_id])
+  @@index([case_id])
+}
+
+model ResearchSource {
+  id              String   @id @default(uuid())
+  user_id         String
+  firm_id         String?
+  title           String
+  source_type     String   // 'document', 'citation', 'statute', 'link'
+  content         String?  // Extracted text or URL
+  file_url        String?
+  metadata        String?  // JSON for additional data (court, year, etc.)
+  
+  created_date    DateTime @default(now())
+  updated_date    DateTime @updatedAt
+  
+  // Relations
+  user            User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@index([user_id])
+  @@index([firm_id])
+  @@index([source_type])
+}

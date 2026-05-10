@@ -1,0 +1,8 @@
+{
+    "short_name": "Inkit",
+    "name": "Inkit Legal Management",
+    "start_url": ".",
+    "display": "standalone",
+    "theme_color": "#1e293b",
+    "background_color": "#ffffff"
+}

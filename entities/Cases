@@ -1,0 +1,114 @@
+{
+  "name": "Case",
+  "type": "object",
+  "properties": {
+    "case_number": {
+      "type": "string",
+      "description": "Unique case identification number"
+    },
+    "case_title": {
+      "type": "string",
+      "description": "Title or name of the case"
+    },
+    "client_name": {
+      "type": "string",
+      "description": "Name of the client"
+    },
+    "client_contact": {
+      "type": "string",
+      "description": "Client contact information"
+    },
+    "client_id": {
+      "type": "string",
+      "description": "ID of the user account for the client"
+    },
+    "court": {
+      "type": "string",
+      "enum": [
+        "supreme_court",
+        "high_court",
+        "district_court",
+        "sessions_court",
+        "magistrate_court",
+        "tribunal"
+      ],
+      "description": "Court where case is filed"
+    },
+    "case_type": {
+      "type": "string",
+      "enum": [
+        "civil",
+        "criminal",
+        "corporate",
+        "family",
+        "labor",
+        "tax",
+        "constitutional",
+        "writ"
+      ],
+      "description": "Type of legal case"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "pending",
+        "closed",
+        "on_hold",
+        "appeal"
+      ],
+      "default": "active",
+      "description": "Current status of the case"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "high",
+        "medium",
+        "low"
+      ],
+      "default": "medium",
+      "description": "Case priority level"
+    },
+    "next_hearing_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Next scheduled hearing date"
+    },
+    "case_description": {
+      "type": "string",
+      "description": "Detailed description of the case"
+    },
+    "opposing_counsel": {
+      "type": "string",
+      "description": "Name of opposing counsel"
+    },
+    "case_value": {
+      "type": "number",
+      "description": "Monetary value of the case"
+    },
+    "filing_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date when case was filed"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Case tags for organization"
+    },
+    "firm_id": {
+      "type": "string",
+      "description": "ID of the associated firm (the firm admin's user ID)"
+    }
+  },
+  "required": [
+    "case_number",
+    "case_title",
+    "client_name",
+    "court",
+    "case_type"
+  ]
+}

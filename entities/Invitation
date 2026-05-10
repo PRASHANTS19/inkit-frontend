@@ -1,0 +1,97 @@
+{
+  "name": "Hearing",
+  "type": "object",
+  "properties": {
+    "case_id": {
+      "type": "string",
+      "description": "Associated case ID"
+    },
+    "hearing_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Scheduled hearing date and time"
+    },
+    "court_room": {
+      "type": "string",
+      "description": "Court room number or identifier"
+    },
+    "judge_name": {
+      "type": "string",
+      "description": "Name of the presiding judge"
+    },
+    "hearing_type": {
+      "type": "string",
+      "enum": [
+        "preliminary",
+        "arguments",
+        "evidence",
+        "judgment",
+        "bail",
+        "interim",
+        "final"
+      ],
+      "description": "Type of hearing"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "scheduled",
+        "completed",
+        "postponed",
+        "cancelled"
+      ],
+      "default": "scheduled",
+      "description": "Hearing status"
+    },
+    "outcome": {
+      "type": "string",
+      "description": "Outcome or result of the hearing"
+    },
+    "next_hearing_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Next scheduled hearing date if any"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Hearing notes and observations"
+    },
+    "preparation_checklist": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "item": {
+            "type": "string"
+          },
+          "completed": {
+            "type": "boolean",
+            "default": false
+          }
+        }
+      },
+      "description": "Preparation checklist for hearing"
+    },
+    "documents_required": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Documents required for hearing"
+    },
+    "reminder_sent": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether hearing reminder has been sent"
+    },
+    "firm_id": {
+      "type": "string",
+      "description": "ID of the associated firm"
+    }
+  },
+  "required": [
+    "case_id",
+    "hearing_date",
+    "hearing_type"
+  ]
+}

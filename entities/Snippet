@@ -1,0 +1,85 @@
+{
+  "name": "Snippet",
+  "type": "object",
+  "properties": {
+    "document_id": {
+      "type": "string",
+      "description": "ID of the source document"
+    },
+    "case_id": {
+      "type": "string",
+      "description": "ID of the associated case"
+    },
+    "content": {
+      "type": "string",
+      "description": "The text content of the snippet or note"
+    },
+    "page_number": {
+      "type": "number",
+      "description": "Page number in the PDF where the snippet was extracted from"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "snippet",
+        "note",
+        "summary"
+      ],
+      "default": "snippet",
+      "description": "The type of item in the workspace"
+    },
+    "position": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        }
+      },
+      "description": "x/y coordinates for positioning in the visual workspace"
+    }
+  },
+  "required": [
+    "document_id",
+    "case_id",
+    "content"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "account_type": {
+              "$in": [
+                "independent_advocate",
+                "law_firm_admin"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "write": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "account_type": {
+              "$in": [
+                "independent_advocate",
+                "law_firm_admin"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

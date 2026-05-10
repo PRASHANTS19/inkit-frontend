@@ -1,0 +1,134 @@
+{
+  "name": "ResearchQuery",
+  "type": "object",
+  "properties": {
+    "query_text": {
+      "type": "string",
+      "description": "Legal research query or question"
+    },
+    "case_id": {
+      "type": "string",
+      "description": "Associated case ID if applicable"
+    },
+    "query_type": {
+      "type": "string",
+      "enum": [
+        "precedent_search",
+        "document_analysis",
+        "case_brief",
+        "legal_opinion",
+        "statute_lookup"
+      ],
+      "description": "Type of research query"
+    },
+    "ai_response": {
+      "type": "string",
+      "description": "AI-generated research response"
+    },
+    "relevant_cases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "case_name": {
+            "type": "string"
+          },
+          "citation": {
+            "type": "string"
+          },
+          "relevance_score": {
+            "type": "number"
+          },
+          "summary": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Relevant case precedents found"
+    },
+    "key_statutes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "act_name": {
+            "type": "string"
+          },
+          "section": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Relevant statutory provisions"
+    },
+    "confidence_score": {
+      "type": "number",
+      "description": "AI confidence score for the response"
+    },
+    "research_status": {
+      "type": "string",
+      "enum": [
+        "completed",
+        "in_progress",
+        "failed"
+      ],
+      "default": "completed",
+      "description": "Status of research query"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Research tags for categorization"
+    },
+    "bookmark": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether query is bookmarked for later reference"
+    }
+  },
+  "required": [
+    "query_text",
+    "query_type"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "account_type": {
+              "$in": [
+                "independent_advocate",
+                "law_firm_admin"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "write": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "account_type": {
+              "$in": [
+                "independent_advocate",
+                "law_firm_admin"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}
