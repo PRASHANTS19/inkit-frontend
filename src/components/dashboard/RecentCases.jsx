@@ -28,6 +28,13 @@ const priorityColors = {
   low: "bg-blue-100 text-blue-800"
 };
 
+const formatDateSafe = (value, pattern, fallback = "N/A") => {
+  if (!value) return fallback;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return fallback;
+  return format(date, pattern);
+};
+
 export default function RecentCases({ cases }) {
   return (
     <Card className="shadow-lg border-0">
@@ -85,14 +92,14 @@ export default function RecentCases({ cases }) {
                 {case_item.next_hearing_date && (
                   <div className="flex items-center gap-2 text-sm text-slate-600">
                     <Calendar className="w-4 h-4" />
-                    <span>Next: {format(new Date(case_item.next_hearing_date), 'MMM d, yyyy')}</span>
+                    <span>Next: {formatDateSafe(case_item.next_hearing_date, 'MMM d, yyyy')}</span>
                   </div>
                 )}
               </div>
               
               <div className="flex justify-between items-center">
                 <p className="text-xs text-slate-500">
-                  Created {format(new Date(case_item.created_date), 'MMM d, yyyy')}
+                  Created {formatDateSafe(case_item.created_date, 'MMM d, yyyy', 'Unknown')}
                 </p>
                 <Link to={createPageUrl(`Cases?view=${case_item.id}`)}>
                   <Button variant="ghost" size="sm" className="text-amber-600 hover:text-amber-700">

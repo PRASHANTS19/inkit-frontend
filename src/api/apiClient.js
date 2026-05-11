@@ -173,10 +173,12 @@ const authApi = {
             method: 'POST',
             body: JSON.stringify({ email, password })
         });
-        if (result.token) {
-            setToken(result.token);
+        if (!result?.token || typeof result.token !== 'string') {
+            throw new Error('Login failed: token missing in response');
         }
-        return result.user;
+
+        setToken(result.token.trim());
+        return authApi.me();
     },
 
     /**
@@ -330,7 +332,26 @@ export const createApiClient = (config = {}) => {
                 ...createEntityApi('cases'),
                 findById: async (id) => apiRequest(`/api/cases/${id}`) // Alias for get
             },
-            Document: createEntityApi('documents'),
+            Document: {
+                ...createEntityApi('documents'),
+                list: async () => {
+                    try {
+                        return await apiRequest('/api/documents?limit=50');
+                    } catch {
+                        return [];
+                    }
+                },
+                filter: async (filter = {}, sortBy = '-created_date', limit = 50) => {
+                    try {
+                        return await apiRequest('/api/documents/filter', {
+                            method: 'POST',
+                            body: JSON.stringify({ filter, sortBy, limit })
+                        });
+                    } catch {
+                        return [];
+                    }
+                }
+            },
             Hearing: createEntityApi('hearings'),
             Task: createEntityApi('tasks'),
             Invoice: createEntityApi('invoices'),
@@ -338,19 +359,43 @@ export const createApiClient = (config = {}) => {
             CaseAssignment: {
                 ...createEntityApi('assignments/cases'),
                 // Override list to use GET
-                list: async (sortBy, limit) => apiRequest('/api/assignments/cases'),
-                filter: async (filter) => apiRequest('/api/assignments/cases/filter', {
-                    method: 'POST',
-                    body: JSON.stringify({ filter })
-                })
+                list: async () => {
+                    try {
+                        return await apiRequest('/api/assignments/cases');
+                    } catch {
+                        return [];
+                    }
+                },
+                filter: async (filter) => {
+                    try {
+                        return await apiRequest('/api/assignments/cases/filter', {
+                            method: 'POST',
+                            body: JSON.stringify({ filter })
+                        });
+                    } catch {
+                        return [];
+                    }
+                }
             },
             TaskAssignment: {
                 ...createEntityApi('assignments/tasks'),
-                list: async () => apiRequest('/api/assignments/tasks'),
-                filter: async (filter) => apiRequest('/api/assignments/tasks/filter', {
-                    method: 'POST',
-                    body: JSON.stringify({ filter })
-                })
+                list: async () => {
+                    try {
+                        return await apiRequest('/api/assignments/tasks');
+                    } catch {
+                        return [];
+                    }
+                },
+                filter: async (filter) => {
+                    try {
+                        return await apiRequest('/api/assignments/tasks/filter', {
+                            method: 'POST',
+                            body: JSON.stringify({ filter })
+                        });
+                    } catch {
+                        return [];
+                    }
+                }
             },
             LibraryDocument: createEntityApi('library'),
             ResearchQuery: createEntityApi('research'),

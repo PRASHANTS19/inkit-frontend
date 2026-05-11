@@ -29,6 +29,17 @@ import EventForm from "../calendar/EventForm";
 import DocumentUploadForm from "../documents/DocumentUploadForm";
 import InvoiceForm from "../billing/InvoiceForm";
 
+const parseDateSafe = (value) => {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const formatDateSafe = (value, pattern, fallback = "N/A") => {
+  const date = parseDateSafe(value);
+  return date ? format(date, pattern) : fallback;
+};
+
 export default function CaseDetails({ case_item, onClose, onEdit, onDelete }) {
   const [activeTab, setActiveTab] = useState("overview");
   const [formToShow, setFormToShow] = useState(null);
@@ -117,9 +128,12 @@ export default function CaseDetails({ case_item, onClose, onEdit, onDelete }) {
     LOW: "bg-blue-100 text-blue-800"
   };
 
-  const upcomingHearing = hearings.filter(h =>
-    new Date(h.hearing_date) > new Date() && h.status === 'scheduled'
-  ).sort((a, b) => new Date(a.hearing_date) - new Date(b.hearing_date))[0];
+  const upcomingHearing = hearings
+    .filter((h) => {
+      const hearingDate = parseDateSafe(h.hearing_date);
+      return hearingDate && hearingDate > new Date() && h.status === 'scheduled';
+    })
+    .sort((a, b) => parseDateSafe(a.hearing_date) - parseDateSafe(b.hearing_date))[0];
 
   const pendingTasks = tasks.filter(t => t.status === 'pending' || t.status === 'in_progress');
 
@@ -255,7 +269,7 @@ export default function CaseDetails({ case_item, onClose, onEdit, onDelete }) {
                       <div className="flex items-center gap-2">
                         <Clock className="w-4 h-4 text-amber-600" />
                         <p className="font-semibold text-slate-900">
-                          {format(new Date(upcomingHearing.hearing_date), 'MMMM d, yyyy h:mm a')}
+                          {formatDateSafe(upcomingHearing.hearing_date, 'MMMM d, yyyy h:mm a')}
                         </p>
                       </div>
                       <p className="text-sm text-slate-600">
@@ -380,7 +394,7 @@ export default function CaseDetails({ case_item, onClose, onEdit, onDelete }) {
                 <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
                   <div>
                     <p className="font-medium">Case Created</p>
-                    <p className="text-sm text-slate-600">{format(new Date(case_item.created_date), 'MMMM d, yyyy')}</p>
+                    <p className="text-sm text-slate-600">{formatDateSafe(case_item.created_date, 'MMMM d, yyyy', 'Unknown')}</p>
                   </div>
                 </div>
 
@@ -388,7 +402,7 @@ export default function CaseDetails({ case_item, onClose, onEdit, onDelete }) {
                   <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
                     <div>
                       <p className="font-medium">Filing Date</p>
-                      <p className="text-sm text-slate-600">{format(new Date(case_item.filing_date), 'MMMM d, yyyy')}</p>
+                      <p className="text-sm text-slate-600">{formatDateSafe(case_item.filing_date, 'MMMM d, yyyy')}</p>
                     </div>
                   </div>
                 )}
@@ -399,9 +413,9 @@ export default function CaseDetails({ case_item, onClose, onEdit, onDelete }) {
                       <p className="font-medium">Next Hearing Date</p>
                       <p className="text-sm text-slate-600">
                         {case_item.next_hearing_date
-                          ? format(new Date(case_item.next_hearing_date), 'MMMM d, yyyy h:mm a')
+                          ? formatDateSafe(case_item.next_hearing_date, 'MMMM d, yyyy h:mm a')
                           : upcomingHearing
-                            ? format(new Date(upcomingHearing.hearing_date), 'MMMM d, yyyy h:mm a')
+                            ? formatDateSafe(upcomingHearing.hearing_date, 'MMMM d, yyyy h:mm a')
                             : 'Not scheduled'
                         }
                       </p>

@@ -104,13 +104,16 @@ export default function CaseForm({ case_item, onSave, onCancel, onDelete }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        
+
         // Ensure firm_id is set for law firm admins
         const submitData = { ...formData };
+        if (submitData.next_hearing_date) {
+            submitData.next_hearing_date = submitData.next_hearing_date.split('T')[0];
+        }
         if (currentUser?.account_type === 'law_firm_admin' && !submitData.firm_id) {
             submitData.firm_id = currentUser.id;
         }
-        
+
         onSave(submitData);
     };
 

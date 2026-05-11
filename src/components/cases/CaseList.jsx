@@ -13,6 +13,13 @@ import {
   UserCheck
 } from "lucide-react";
 
+const formatDateSafe = (value, pattern, fallback = "N/A") => {
+  if (!value) return fallback;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return fallback;
+  return format(date, pattern);
+};
+
 export default function CaseList({ cases, isLoading, onView, onEdit, onAssign, userRole }) {
   const statusColors = {
     ACTIVE: "bg-green-100 text-green-800",
@@ -149,7 +156,7 @@ export default function CaseList({ cases, isLoading, onView, onEdit, onAssign, u
                   <Calendar className="w-4 h-4" />
                   <span>
                     <strong>Next Hearing:</strong>{' '}
-                    {format(new Date(case_item.next_hearing_date), 'MMM d, yyyy')}
+                    {formatDateSafe(case_item.next_hearing_date, 'MMM d, yyyy')}
                   </span>
                 </div>
               )}
@@ -172,9 +179,9 @@ export default function CaseList({ cases, isLoading, onView, onEdit, onAssign, u
             )}
 
             <div className="mt-4 pt-4 border-t flex justify-between items-center text-xs text-slate-500">
-              <span>Created: {format(new Date(case_item.created_date), 'MMM d, yyyy')}</span>
+              <span>Created: {formatDateSafe(case_item.created_date, 'MMM d, yyyy', 'Unknown')}</span>
               {case_item.filing_date && (
-                <span>Filed: {format(new Date(case_item.filing_date), 'MMM d, yyyy')}</span>
+                <span>Filed: {formatDateSafe(case_item.filing_date, 'MMM d, yyyy')}</span>
               )}
             </div>
           </CardContent>
