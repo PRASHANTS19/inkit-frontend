@@ -19,7 +19,9 @@ import {
   Phone,
   Clock,
   AlertTriangle,
-  Plus
+  Plus,
+  Gavel,
+  RefreshCw
 } from "lucide-react";
 import TaskList from "../calendar/TaskList";
 import HearingList from "../calendar/HearingList";
@@ -40,11 +42,26 @@ const formatDateSafe = (value, pattern, fallback = "N/A") => {
   return date ? format(date, pattern) : fallback;
 };
 
+/** Splits a pipe-separated string from the backend into a clean display array. */
+const pipeSplit = (str) => (str ? str.split('|').filter(Boolean) : []);
+
 export default function CaseDetails({ case_item, onClose, onEdit, onDelete }) {
   const [activeTab, setActiveTab] = useState("overview");
   const [formToShow, setFormToShow] = useState(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const queryClient = useQueryClient();
+
+  // Fetch the individual case by ID — this is what triggers the backend eCourt sync.
+  // The list endpoint (GET /api/cases) does NOT trigger sync; only GET /api/cases/{id} does.
+  const { data: freshCase, isLoading: loadingCase } = useQuery({
+    queryKey: ['case-detail', case_item.id],
+    queryFn: () => base44.entities.Case.get(case_item.id),
+    staleTime: 60 * 1000, // re-fetch after 1 min to pick up sync results
+    retry: 1,
+  });
+
+  // Use the freshly fetched case data (with eCourt fields) if available, else fall back to list data
+  const caseData = freshCase ?? case_item;
 
   const { data: cases = [] } = useQuery({
     queryKey: ['cases'],
@@ -83,7 +100,6 @@ export default function CaseDetails({ case_item, onClose, onEdit, onDelete }) {
   const handleFormSave = async () => {
     setFormToShow(null);
     setSelectedEvent(null);
-
     await queryClient.invalidateQueries({ queryKey: ['case-tasks', case_item.id] });
     await queryClient.invalidateQueries({ queryKey: ['case-documents', case_item.id] });
     await queryClient.invalidateQueries({ queryKey: ['case-hearings', case_item.id] });
@@ -142,24 +158,41 @@ export default function CaseDetails({ case_item, onClose, onEdit, onDelete }) {
   const totalPaid = paidInvoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
   const outstanding = totalBilled - totalPaid;
 
+  // Derived eCourt list fields
+  const judges = pipeSplit(caseData.judges);
+  const petitioners = pipeSplit(caseData.petitioners);
+  const petitionerAdvocates = pipeSplit(caseData.petitioner_advocates);
+  const respondents = pipeSplit(caseData.respondents);
+  const respondentAdvocates = pipeSplit(caseData.respondent_advocates);
+  const hasECourtData = caseData.last_ecourt_sync || caseData.ecourt_case_status;
+
   return (
     <Card className="shadow-2xl border-0 max-w-6xl mx-auto">
       <CardHeader className="bg-gradient-to-r from-slate-800 to-slate-700 text-white">
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-2xl mb-2">{case_item.case_title}</CardTitle>
-            <div className="flex items-center gap-3">
-              <Badge className={`${statusColors[case_item.status]} text-xs`}>
-                {case_item.status?.replace('_', ' ')}
+            <CardTitle className="text-2xl mb-2">{caseData.case_title}</CardTitle>
+            <div className="flex items-center gap-3 flex-wrap">
+              <Badge className={`${statusColors[caseData.status]} text-xs`}>
+                {caseData.status?.replace('_', ' ')}
               </Badge>
-              <Badge className={`${priorityColors[case_item.priority]} text-xs`}>
-                {case_item.priority} priority
+              <Badge className={`${priorityColors[caseData.priority]} text-xs`}>
+                {caseData.priority} priority
               </Badge>
-              <span className="text-slate-300">#{case_item.case_number}</span>
+              <span className="text-slate-300">#{caseData.case_number}</span>
+              {caseData.cnr_number && (
+                <span className="text-slate-400 text-sm font-mono">CNR: {caseData.cnr_number}</span>
+              )}
+              {loadingCase && (
+                <span className="text-slate-400 text-xs flex items-center gap-1">
+                  <RefreshCw className="w-3 h-3 animate-spin" />
+                  Syncing eCourt data...
+                </span>
+              )}
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="ghost" size="sm" onClick={() => onEdit(case_item)} className="text-white hover:bg-white/20">
+            <Button variant="ghost" size="sm" onClick={() => onEdit(caseData)} className="text-white hover:bg-white/20">
               <Edit className="w-4 h-4 mr-2" />
               Edit
             </Button>
@@ -181,7 +214,7 @@ export default function CaseDetails({ case_item, onClose, onEdit, onDelete }) {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
-            {case_item.case_description && (
+            {caseData.case_description && (
               <Card className="bg-slate-50">
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
@@ -190,12 +223,13 @@ export default function CaseDetails({ case_item, onClose, onEdit, onDelete }) {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-slate-700 leading-relaxed">{case_item.case_description}</p>
+                  <p className="text-slate-700 leading-relaxed">{caseData.case_description}</p>
                 </CardContent>
               </Card>
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Client Information */}
               <Card className="bg-slate-50">
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
@@ -206,20 +240,21 @@ export default function CaseDetails({ case_item, onClose, onEdit, onDelete }) {
                 <CardContent className="space-y-3">
                   <div>
                     <p className="text-sm text-slate-600">Name</p>
-                    <p className="font-semibold">{case_item.client_name}</p>
+                    <p className="font-semibold">{caseData.client_name}</p>
                   </div>
-                  {case_item.client_contact && (
+                  {caseData.client_contact && (
                     <div>
                       <p className="text-sm text-slate-600">Contact</p>
                       <div className="flex items-center gap-2">
                         <Phone className="w-4 h-4 text-slate-400" />
-                        <p className="font-medium">{case_item.client_contact}</p>
+                        <p className="font-medium">{caseData.client_contact}</p>
                       </div>
                     </div>
                   )}
                 </CardContent>
               </Card>
 
+              {/* Case Details */}
               <Card className="bg-slate-50">
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
@@ -231,31 +266,50 @@ export default function CaseDetails({ case_item, onClose, onEdit, onDelete }) {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-slate-600">Court</p>
-                      <p className="font-semibold">{case_item.court?.replace('_', ' ')}</p>
+                      <p className="font-semibold">{caseData.court?.replace('_', ' ')}</p>
                     </div>
                     <div>
                       <p className="text-sm text-slate-600">Type</p>
-                      <p className="font-semibold">{case_item.case_type}</p>
+                      <p className="font-semibold">{caseData.case_type}</p>
                     </div>
                   </div>
-                  {case_item.case_value && (
+                  {caseData.cnr_number && (
+                    <div>
+                      <p className="text-sm text-slate-600">CNR Number</p>
+                      <p className="font-mono font-semibold text-slate-800">{caseData.cnr_number}</p>
+                    </div>
+                  )}
+                  {caseData.registration_number && (
+                    <div>
+                      <p className="text-sm text-slate-600">Registration Number</p>
+                      <p className="font-semibold">{caseData.registration_number}</p>
+                    </div>
+                  )}
+                  {caseData.filing_number && (
+                    <div>
+                      <p className="text-sm text-slate-600">Filing Number</p>
+                      <p className="font-semibold">{caseData.filing_number}</p>
+                    </div>
+                  )}
+                  {caseData.case_value && (
                     <div>
                       <p className="text-sm text-slate-600">Case Value</p>
                       <div className="flex items-center gap-1">
                         <IndianRupee className="w-4 h-4 text-slate-400" />
-                        <p className="font-semibold">{case_item.case_value.toLocaleString()}</p>
+                        <p className="font-semibold">{caseData.case_value.toLocaleString()}</p>
                       </div>
                     </div>
                   )}
-                  {case_item.opposing_counsel && (
+                  {caseData.opposing_counsel && (
                     <div>
                       <p className="text-sm text-slate-600">Opposing Counsel</p>
-                      <p className="font-semibold">{case_item.opposing_counsel}</p>
+                      <p className="font-semibold">{caseData.opposing_counsel}</p>
                     </div>
                   )}
                 </CardContent>
               </Card>
 
+              {/* Next Hearing */}
               <Card className={upcomingHearing ? "bg-amber-50 border-amber-200" : "bg-slate-50"}>
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
@@ -292,6 +346,7 @@ export default function CaseDetails({ case_item, onClose, onEdit, onDelete }) {
                 </CardContent>
               </Card>
 
+              {/* Pending Tasks */}
               <Card className="bg-slate-50">
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
@@ -324,6 +379,7 @@ export default function CaseDetails({ case_item, onClose, onEdit, onDelete }) {
                 </CardContent>
               </Card>
 
+              {/* Documents */}
               <Card className="bg-slate-50">
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
@@ -350,6 +406,7 @@ export default function CaseDetails({ case_item, onClose, onEdit, onDelete }) {
                 </CardContent>
               </Card>
 
+              {/* Billing Summary */}
               <Card className="bg-slate-50">
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
@@ -383,6 +440,7 @@ export default function CaseDetails({ case_item, onClose, onEdit, onDelete }) {
               </Card>
             </div>
 
+            {/* Important Dates */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
@@ -394,26 +452,24 @@ export default function CaseDetails({ case_item, onClose, onEdit, onDelete }) {
                 <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
                   <div>
                     <p className="font-medium">Case Created</p>
-                    <p className="text-sm text-slate-600">{formatDateSafe(case_item.created_date, 'MMMM d, yyyy', 'Unknown')}</p>
+                    <p className="text-sm text-slate-600">{formatDateSafe(caseData.created_date, 'MMMM d, yyyy', 'Unknown')}</p>
                   </div>
                 </div>
-
-                {case_item.filing_date && (
+                {caseData.filing_date && (
                   <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
                     <div>
                       <p className="font-medium">Filing Date</p>
-                      <p className="text-sm text-slate-600">{formatDateSafe(case_item.filing_date, 'MMMM d, yyyy')}</p>
+                      <p className="text-sm text-slate-600">{formatDateSafe(caseData.filing_date, 'MMMM d, yyyy')}</p>
                     </div>
                   </div>
                 )}
-
-                {(case_item.next_hearing_date || upcomingHearing) && (
+                {(caseData.next_hearing_date || upcomingHearing) && (
                   <div className="flex items-center justify-between p-3 bg-amber-50 rounded-lg border-l-4 border-amber-400">
                     <div>
                       <p className="font-medium">Next Hearing Date</p>
                       <p className="text-sm text-slate-600">
-                        {case_item.next_hearing_date
-                          ? formatDateSafe(case_item.next_hearing_date, 'MMMM d, yyyy h:mm a')
+                        {caseData.next_hearing_date
+                          ? formatDateSafe(caseData.next_hearing_date, 'MMMM d, yyyy h:mm a')
                           : upcomingHearing
                             ? formatDateSafe(upcomingHearing.hearing_date, 'MMMM d, yyyy h:mm a')
                             : 'Not scheduled'
@@ -425,6 +481,103 @@ export default function CaseDetails({ case_item, onClose, onEdit, onDelete }) {
                 )}
               </CardContent>
             </Card>
+
+            {/* eCourt Information — shown only when synced */}
+            {hasECourtData && (
+              <Card className="border-2 border-blue-100 bg-blue-50/30">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Gavel className="w-5 h-5 text-blue-600" />
+                    eCourt Information
+                    {caseData.last_ecourt_sync && (
+                      <span className="ml-auto text-xs font-normal text-slate-500 flex items-center gap-1">
+                        <RefreshCw className="w-3 h-3" />
+                        Last synced: {formatDateSafe(caseData.last_ecourt_sync, 'MMM d, yyyy h:mm a')}
+                      </span>
+                    )}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Status & Type row */}
+                  <div className="grid grid-cols-2 gap-4">
+                    {caseData.ecourt_case_status && (
+                      <div>
+                        <p className="text-sm text-slate-600">eCourt Status</p>
+                        <Badge className="bg-blue-100 text-blue-800 mt-1">{caseData.ecourt_case_status}</Badge>
+                      </div>
+                    )}
+                    {caseData.ecourt_case_type && (
+                      <div>
+                        <p className="text-sm text-slate-600">eCourt Case Type</p>
+                        <p className="font-semibold text-sm">{caseData.ecourt_case_type}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Judges */}
+                  {judges.length > 0 && (
+                    <div>
+                      <p className="text-sm text-slate-600 mb-1">Judge(s)</p>
+                      <div className="space-y-1">
+                        {judges.map((j, i) => (
+                          <p key={i} className="font-medium text-sm bg-white rounded px-2 py-1 border">{j}</p>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Petitioners */}
+                    {petitioners.length > 0 && (
+                      <div>
+                        <p className="text-sm text-slate-600 mb-1">Petitioner(s)</p>
+                        <div className="space-y-1">
+                          {petitioners.map((p, i) => (
+                            <p key={i} className="font-medium text-sm bg-white rounded px-2 py-1 border">{p}</p>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Petitioner Advocates */}
+                    {petitionerAdvocates.length > 0 && (
+                      <div>
+                        <p className="text-sm text-slate-600 mb-1">Petitioner Advocate(s)</p>
+                        <div className="space-y-1">
+                          {petitionerAdvocates.map((a, i) => (
+                            <p key={i} className="text-sm bg-white rounded px-2 py-1 border text-slate-700">{a}</p>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Respondents */}
+                    {respondents.length > 0 && (
+                      <div>
+                        <p className="text-sm text-slate-600 mb-1">Respondent(s)</p>
+                        <div className="space-y-1">
+                          {respondents.map((r, i) => (
+                            <p key={i} className="font-medium text-sm bg-white rounded px-2 py-1 border">{r}</p>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Respondent Advocates */}
+                    {respondentAdvocates.length > 0 && (
+                      <div>
+                        <p className="text-sm text-slate-600 mb-1">Respondent Advocate(s)</p>
+                        <div className="space-y-1">
+                          {respondentAdvocates.map((a, i) => (
+                            <p key={i} className="text-sm bg-white rounded px-2 py-1 border text-slate-700">{a}</p>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="tasks">

@@ -355,7 +355,19 @@ export const createApiClient = (config = {}) => {
             Hearing: createEntityApi('hearings'),
             Task: createEntityApi('tasks'),
             Invoice: createEntityApi('invoices'),
-            Invitation: createEntityApi('invitations'),
+            Invitation: {
+                ...createEntityApi('invitations'),
+                accept: async (id) => {
+                    return apiRequest(`/api/invitations/${id}/accept`, {
+                        method: 'PUT'
+                    });
+                },
+                decline: async (id) => {
+                    return apiRequest(`/api/invitations/${id}/decline`, {
+                        method: 'PUT'
+                    });
+                }
+            },
             CaseAssignment: {
                 ...createEntityApi('assignments/cases'),
                 // Override list to use GET

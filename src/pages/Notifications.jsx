@@ -60,22 +60,9 @@ export default function Notifications() {
       addDebugLog(`Current user ID: ${currentUser.id}`);
       addDebugLog(`Current user type: ${currentUser.account_type}`);
       
-      addDebugLog('Step 1: Updating invitation status...');
-      await base44.entities.Invitation.update(invitation.id, { status: 'accepted' });
-      addDebugLog('✓ Invitation status updated successfully');
-      
-      addDebugLog('Step 2: Updating user profile...');
-      await base44.entities.User.update(currentUser.id, {
-        account_type: 'associate',
-        firm_admin_id: invitation.firm_admin_id,
-        firm_name: invitation.firm_name,
-        permissions: {
-          can_manage_billing: false,
-          can_manage_users: false,
-          can_view_all_cases: false
-        }
-      });
-      addDebugLog('✓ User profile updated successfully!');
+      addDebugLog('Step 1: Calling backend to accept invitation...');
+      await base44.entities.Invitation.accept(invitation.id);
+      addDebugLog('✓ Invitation accepted and user role updated successfully');
       
       addDebugLog('=== ACCEPTANCE SUCCESSFUL ===');
       alert('✅ Success! Your account has been updated. The page will reload now to show your new role.');
@@ -99,7 +86,7 @@ export default function Notifications() {
     setError(null);
     
     try {
-      await base44.entities.Invitation.update(invitationId, { status: 'rejected' });
+      await base44.entities.Invitation.decline(invitationId);
       await loadData();
       setProcessingInvitation(null);
     } catch (e) {

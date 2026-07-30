@@ -6,18 +6,39 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AlertCircle, Scale, Loader2 } from 'lucide-react';
+import { AlertCircle, Scale, Loader2, User, Building2, Users } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+
+const ACCOUNT_TYPES = [
+    {
+        value: 'independent_advocate',
+        label: 'Independent Advocate',
+        icon: User,
+        description: 'Solo practitioner managing your own cases and clients.',
+    },
+    {
+        value: 'law_firm_admin',
+        label: 'Law Firm Admin',
+        icon: Building2,
+        description: 'Create and manage a firm, invite associates, and oversee all cases.',
+    },
+    {
+        value: 'associate',
+        label: 'Associate',
+        icon: Users,
+        description: 'Work under a law firm. Register here, then ask your firm admin to link you.',
+    },
+];
 
 export default function Register() {
     const [formData, setFormData] = useState({
         email: '',
         password: '',
         confirmPassword: '',
-        full_name: '',
-        account_type: 'independent_advocate',
-        firm_name: '',
-        bar_number: ''
+        fullName: '',
+        accountType: 'independent_advocate',
+        firmName: '',
+        barNumber: ''
     });
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
@@ -27,6 +48,8 @@ export default function Register() {
     const handleChange = (field, value) => {
         setFormData(prev => ({ ...prev, [field]: value }));
     };
+
+    const selectedType = ACCOUNT_TYPES.find(t => t.value === formData.accountType);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -83,17 +106,46 @@ export default function Register() {
                             </Alert>
                         )}
 
+                        {/* Account Type */}
                         <div className="space-y-2">
-                            <Label htmlFor="full_name">Full Name</Label>
+                            <Label htmlFor="accountType">Account Type</Label>
+                            <Select
+                                value={formData.accountType}
+                                onValueChange={(value) => handleChange('accountType', value)}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {ACCOUNT_TYPES.map(t => (
+                                        <SelectItem key={t.value} value={t.value}>
+                                            {t.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            {/* Contextual hint */}
+                            {selectedType && (
+                                <div className="flex items-start gap-2 p-3 bg-slate-50 rounded-lg border text-sm text-slate-600">
+                                    <selectedType.icon className="w-4 h-4 mt-0.5 text-amber-600 shrink-0" />
+                                    <span>{selectedType.description}</span>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Full Name */}
+                        <div className="space-y-2">
+                            <Label htmlFor="fullName">Full Name</Label>
                             <Input
-                                id="full_name"
+                                id="fullName"
                                 placeholder="Adv. John Doe"
-                                value={formData.full_name}
-                                onChange={(e) => handleChange('full_name', e.target.value)}
+                                value={formData.fullName}
+                                onChange={(e) => handleChange('fullName', e.target.value)}
                                 required
                             />
                         </div>
 
+                        {/* Email */}
                         <div className="space-y-2">
                             <Label htmlFor="email">Email</Label>
                             <Input
@@ -106,6 +158,7 @@ export default function Register() {
                             />
                         </div>
 
+                        {/* Password + Confirm */}
                         <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-2">
                                 <Label htmlFor="password">Password</Label>
@@ -131,39 +184,29 @@ export default function Register() {
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="account_type">Account Type</Label>
-                            <Select
-                                value={formData.account_type}
-                                onValueChange={(value) => handleChange('account_type', value)}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="independent_advocate">Independent Advocate</SelectItem>
-                                    <SelectItem value="law_firm_admin">Law Firm Admin</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
+                        {/* Firm Name — hidden for associates (they join via invite) */}
+                        {formData.accountType !== 'associate' && (
+                            <div className="space-y-2">
+                                <Label htmlFor="firmName">
+                                    {formData.accountType === 'law_firm_admin' ? 'Firm Name' : 'Practice Name'}
+                                </Label>
+                                <Input
+                                    id="firmName"
+                                    placeholder="Doe & Associates"
+                                    value={formData.firmName}
+                                    onChange={(e) => handleChange('firmName', e.target.value)}
+                                />
+                            </div>
+                        )}
 
+                        {/* Bar Number */}
                         <div className="space-y-2">
-                            <Label htmlFor="firm_name">Firm/Practice Name</Label>
+                            <Label htmlFor="barNumber">Bar Council Number (Optional)</Label>
                             <Input
-                                id="firm_name"
-                                placeholder="Doe & Associates"
-                                value={formData.firm_name}
-                                onChange={(e) => handleChange('firm_name', e.target.value)}
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="bar_number">Bar Council Number (Optional)</Label>
-                            <Input
-                                id="bar_number"
+                                id="barNumber"
                                 placeholder="MH/1234/2020"
-                                value={formData.bar_number}
-                                onChange={(e) => handleChange('bar_number', e.target.value)}
+                                value={formData.barNumber}
+                                onChange={(e) => handleChange('barNumber', e.target.value)}
                             />
                         </div>
 

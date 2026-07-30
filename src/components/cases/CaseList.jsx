@@ -69,7 +69,7 @@ export default function CaseList({ cases, isLoading, onView, onEdit, onAssign, u
             {userRole === 'associate' ? 'No cases assigned yet' : 'No cases found'}
           </h3>
           <p className="text-slate-500">
-            {userRole === 'associate' 
+            {userRole === 'associate'
               ? 'Cases assigned to you by your firm will appear here.'
               : 'Add your first case to get started with case management.'
             }
@@ -91,9 +91,12 @@ export default function CaseList({ cases, isLoading, onView, onEdit, onAssign, u
                   <div>
                     <h3 className="text-xl font-bold text-slate-900">{case_item.case_title}</h3>
                     <p className="text-slate-600">Case #{case_item.case_number}</p>
+                    {case_item.cnr_number && (
+                      <p className="text-xs text-slate-400 font-mono mt-0.5">CNR: {case_item.cnr_number}</p>
+                    )}
                   </div>
                 </div>
-                
+
                 <div className="flex flex-wrap gap-2 mt-3">
                   <Badge className={statusColors[case_item.status]}>
                     {case_item.status?.replace('_', ' ')}
@@ -107,11 +110,16 @@ export default function CaseList({ cases, isLoading, onView, onEdit, onAssign, u
                   <Badge variant="outline" className="bg-purple-50">
                     {case_item.case_type}
                   </Badge>
+                  {case_item.ecourt_case_status && (
+                    <Badge variant="outline" className="bg-teal-50 text-teal-700 border-teal-200">
+                      eCourt: {case_item.ecourt_case_status}
+                    </Badge>
+                  )}
                 </div>
               </div>
 
               <div className="flex flex-col gap-2 ml-4">
-                <Button 
+                <Button
                   onClick={() => onView(case_item)}
                   variant="outline"
                   size="sm"
@@ -120,7 +128,7 @@ export default function CaseList({ cases, isLoading, onView, onEdit, onAssign, u
                   View
                 </Button>
                 {userRole !== 'associate' && (
-                  <Button 
+                  <Button
                     onClick={() => onEdit(case_item)}
                     variant="outline"
                     size="sm"
@@ -130,7 +138,7 @@ export default function CaseList({ cases, isLoading, onView, onEdit, onAssign, u
                   </Button>
                 )}
                 {onAssign && (
-                  <Button 
+                  <Button
                     onClick={() => onAssign(case_item)}
                     className="bg-blue-600 hover:bg-blue-700"
                     size="sm"
